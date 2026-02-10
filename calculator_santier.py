@@ -13,6 +13,7 @@ st.markdown("""
     .work-mon-fri { background-color: #f1c40f; color: black; padding: 5px; border-radius: 5px; }
     .work-sat { background-color: #2ecc71; color: white; padding: 5px; border-radius: 5px; }
     .rest-day { background-color: #e67e22; color: white; padding: 5px; border-radius: 5px; }
+    .big-font { font-size: 20px !important; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -32,7 +33,7 @@ with st.sidebar:
         st.stop()
 
     num_supervisors = st.number_input("Număr Supervizori", min_value=1, value=1)
-    total_required_hours = st.number_input("Total Ore Necesare (Manoperă)", min_value=10, value=1000)
+    total_required_hours = st.number_input("Total Ore Necesare (Manoperă Muncitori)", min_value=10, value=1000)
     
     st.markdown("### 💰 Tarife Manoperă")
     worker_rate = st.number_input("Tarif Muncitor - Lucru (€/oră)", value=10.0)
@@ -170,18 +171,18 @@ total_labor_work_workers = 0
 total_labor_work_supervisors = 0
 total_labor_travel_workers = 0
 total_labor_travel_supervisors = 0
-total_manhours_project = 0 # Pentru Argon
+total_manhours_project = 0 # Ore productive totale (toti muncitorii)
 
 for row in calendar_data:
-    # Cost Lucru (Manoperă Efectivă)
+    # Cost Lucru (Manoperă Efectivă - supraveghere și muncă)
     total_labor_work_workers += row["Ore Plată (Lucru)"] * num_workers * worker_rate
     total_labor_work_supervisors += row["Ore Plată (Lucru)"] * num_supervisors * supervisor_rate
     
-    # Cost Drum
+    # Cost Drum (Plată ore travel)
     total_labor_travel_workers += row["Ore Plată (Drum)"] * num_workers * worker_travel_rate
     total_labor_travel_supervisors += row["Ore Plată (Drum)"] * num_supervisors * supervisor_travel_rate
 
-    # Calcul ore totale efective pe șantier (pentru Argon)
+    # Calcul ore totale efective pe șantier (pentru Argon și Rata All Inclusive)
     total_manhours_project += row["Ore Muncă (Prod)"] * num_workers
 
 # Cost Combustibil
@@ -204,18 +205,24 @@ grand_total_others = cost_pm + cost_tpl + cost_consumables
 grand_total_project = (total_labor_work_workers + total_labor_work_supervisors + 
                        grand_total_transport + grand_total_others)
 
+# --- CALCUL RATA ALL INCLUSIVE ---
+if total_manhours_project > 0:
+    all_inclusive_rate = grand_total_project / total_manhours_project
+else:
+    all_inclusive_rate = 0
+
 # --- AFIȘARE REZULTATE ---
 
 # INFO BAR
-st.info(f"📅 Durată Proiect: **{weeks_count_real} săptămâni** | Zile Calendaristice: {days_total_duration} | Zile Efective Lucru: {working_days_count}")
+st.info(f"📅 Durată: **{weeks_count_real} săpt.** | Zile Total: {days_total_duration} | Zile Lucru: {working_days_count}")
 
-# METRICS
+# METRICS DE BAZĂ
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Muncitori Necesar", f"{num_workers}", f"din {raw_workers:.2f}")
 c2.metric("Mașini Muncitori", f"{cars_workers}")
 c3.metric("Mașini Supervizori", f"{cars_supervisors}")
 c4.metric("Total Trip-uri", f"{trip_segments}")
-c5.metric("Argon (Butelii)", f"{argon_cylinders:,.2f}", help="Total ore manoperă / 40")
+c5.metric("Argon (Butelii)", f"{argon_cylinders:,.2f}")
 
 st.markdown("---")
 st.header("📊 Detaliere Costuri")
@@ -246,7 +253,17 @@ with col_others:
     st.markdown(f"**Subtotal:** :blue[{grand_total_others:,.2f} €]")
 
 st.markdown("---")
-st.markdown(f"## 💰 TOTAL GENERAL PROIECT: :red[{grand_total_project:,.2f} €]")
+
+# FINAL RESULTS AREA
+st.markdown("### 🏁 Rezultate Finale")
+res_col1, res_col2 = st.columns(2)
+
+with res_col1:
+    st.markdown(f"## 💰 TOTAL GENERAL: :red[{grand_total_project:,.2f} €]")
+
+with res_col2:
+    st.markdown(f"## 📉 Rata All Inclusive: :violet[{all_inclusive_rate:,.2f} €/oră]")
+    st.caption("Cost Total Proiect / Total Ore Manoperă Efectivă Muncitori")
 
 # --- CALENDAR VIZUAL ---
 with st.expander("📅 Vezi Calendar Detaliat", expanded=False):

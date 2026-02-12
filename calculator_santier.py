@@ -158,12 +158,12 @@ for day in days:
             d_type = "Lucru (Sâmbătă) 🚧"
             css_class = "work-sat"
             hours_worked_productive = 6
-            hours_paid_work = 6 # MODIFICARE: Tarif normal, nu dublu
+            hours_paid_work = 6 # Tarif normal
             working_days_count += 1 
         else: # Duminică
             d_type = "Pauză (Duminică) ☕"
             css_class = "rest-day"
-            # needs_accommodation ramane True (sunt pe santier in pauza)
+            # needs_accommodation ramane True
 
     total_work_hours_per_worker += hours_worked_productive
     if needs_accommodation:
@@ -226,7 +226,9 @@ total_cost_local_trans = cost_local_trans_workers + cost_local_trans_supervisors
 cost_pm = working_days_count * pm_daily_rate
 cost_tpl = working_days_count * tpl_daily_rate
 cost_consumables = total_labor_work_workers * (consumables_pct / 100.0)
-argon_cylinders = total_manhours_project / 40.0
+
+# MODIFICARE: Rotunjire in sus (Ceiling) pentru Butelii
+argon_cylinders = math.ceil(total_manhours_project / 40.0)
 
 # Totaluri Pe Categorii
 grand_total_transport_trip = total_labor_travel_workers + total_labor_travel_supervisors + fuel_cost_total
@@ -254,7 +256,7 @@ c1.metric("Muncitori Necesar", f"{num_workers}", f"din {raw_workers:.2f}")
 c2.metric("Mașini Muncitori", f"{cars_workers}")
 c3.metric("Mașini Supervizori", f"{cars_supervisors}")
 c4.metric("Total Trip-uri", f"{trip_segments}")
-c5.metric("Argon (Butelii)", f"{argon_cylinders:,.2f}")
+c5.metric("Argon (Butelii)", f"{int(argon_cylinders)}", help="Total ore manoperă / 40 (Rotunjit în sus)")
 
 st.markdown("---")
 st.header("📊 Detaliere Costuri")
